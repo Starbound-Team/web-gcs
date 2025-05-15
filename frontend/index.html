@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web GCS</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="css/top_bar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 1em;
+        }
+
+        #controls,
+        #status,
+        #telemetry {
+            margin-bottom: 1em;
+        }
+
+        /* Added controls div */
+        #status,
+        #telemetry {
+            padding: 0.5em;
+            border: 1px solid #ccc;
+            min-height: 50px;
+            background-color: #f9f9f9;
+        }
+
+        button {
+            margin: 0.5em 0.5em 0.5em 0;
+            padding: 0.5em 1em;
+        }
+
+        pre {
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Allow text wrapping */
+
+        /* Style for the map container */
+        #map {
+            position: center;
+            height: 450px;
+            /* Adjust height as needed */
+            width: 90%;
+            border: 1px solid #ccc;
+            margin-top: 1em;
+            margin: 1em auto 1em auto;
+            /* Center horizontally, keep top margin */
+            border-radius: 10px;
+        }
+
+        /* Hide text for screen readers only */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        /* Hero Section Styling */
+        .hero-section {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1c2331 0%, #0c1016 100%);
+            overflow: hidden;
+            padding-top: 80px;
+            /* To account for the top bar */
+        }
+
+        .hero-stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('pictures/starry_bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.8;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 800px;
+            padding: 0 20px;
+        }
+
+        .hero-logo {
+            width: 180px;
+            height: 180px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 0 20px rgba(71, 118, 230, 0.6));
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #4776E6, #8E54E9);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: #d9d9d9;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            gap: 20px;
+        }
+
+        .hero-button {
+            padding: 15px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button.connected {
+            background-color: #4CAF50 !important;
+            /* Green */
+            color: white;
+        }
+
+
+        button.disconnected {
+            background-color: #f72a1b !important;
+            /* Red */
+            color: white;
+        }
+
+        .hero-button.primary {
+            background: linear-gradient(90deg, #4776E6, #8E54E9);
+            color: #fff;
+            border: none;
+            box-shadow: 0 4px 15px rgba(71, 118, 230, 0.4);
+        }
+
+        .hero-button.primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(71, 118, 230, 0.6);
+        }
+
+        .hero-button.secondary {
+            background: transparent;
+            color: #fff;
+            border: 2px solid rgba(142, 84, 233, 0.8);
+        }
+
+        .hero-button.secondary:hover {
+            background: rgba(142, 84, 233, 0.2);
+            transform: translateY(-3px);
+        }
+
+        /* Mission section styling */
+        .mission-section {
+            padding: 100px 0;
+            background: linear-gradient(to bottom, #0c1016, #1c2331);
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mission-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 50px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mission-content {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .mission-title {
+            margin-bottom: 50px;
+        }
+
+        .mission-title h2 {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            color: #fff;
+            position: relative;
+        }
+
+        .mission-title .title-underline {
+            height: 4px;
+            width: 80px;
+            background: linear-gradient(90deg, #4776E6, #8E54E9);
+            margin: 0;
+            border-radius: 2px;
+        }
+
+        .mission-info {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .mission-text {
+            font-size: 1.1em;
+            line-height: 1.7;
+            margin-bottom: 30px;
+            color: #d9d9d9;
+        }
+
+        .mission-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .mission-feature {
+            background: rgba(22, 37, 80, 0.6);
+            /* Darker blue background that fits space theme */
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(71, 118, 230, 0.7);
+            /* More pronounced blue border */
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(64, 201, 255, 0.3);
+            /* Subtle blue glow */
+        }
+
+        .mission-feature:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(64, 201, 255, 0.4);
+            border-color: #40c9ff;
+        }
+
+        .feature-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(71, 118, 230, 0.1), rgba(142, 84, 233, 0.1));
+            border-radius: 50%;
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #8E54E9;
+        }
+
+        .feature-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .feature-text {
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #d9d9d9;
+        }
+
+        /* Stats Section */
+        .stats-container {
+            background: rgba(22, 22, 40, 0.3);
+            padding: 50px 0;
+            margin-top: 50px;
+            border-top: 1px solid rgba(71, 118, 230, 0.2);
+            border-bottom: 1px solid rgba(71, 118, 230, 0.2);
+        }
+
+        .stats-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            padding: 0 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #4776E6, #8E54E9);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: #d9d9d9;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive improvements */
+        @media screen and (max-width: 768px) {
+
+            .hero-section {
+                height: auto;
+                min-height: 100vh;
+                padding-bottom: 80px;
+                /* Significantly increased padding at bottom */
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.2rem;
+                margin-bottom: 30px;
+                /* Reduced margin to save space */
+            }
+
+            .hero-cta {
+                flex-direction: column;
+                gap: 15px;
+                margin-bottom: 40px;
+                /* Added extra bottom margin to buttons container */
+            }
+
+            .hero-button {
+                padding: 12px 25px;
+            }
+
+            .mission-container,
+            .stats-wrapper {
+                flex-direction: column;
+                gap: 30px;
+            }
+
+            .mission-section {
+                margin-top: 60px;
+                /* Added top margin */
+                padding-top: 160px;
+                /* Significantly increased top padding to prevent overlap */
+            }
+
+            /* Special adjustment for Greek language */
+            html[lang="el"] .mission-section {
+                padding-top: 180px;
+                /* Extra padding for Greek language */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <ul class="nav-links">
+        <!-- Logo and Company Name -->
+        <img class="bg-svg" src="Icons/top_bar_background.svg" alt="Background SVG">
+        <li class="logo">
+            <a href="index.html?lang=en" style="text-decoration:none;">
+                <img src="Icons/starbound_team_logo.svg" alt="Company Logo" class="logo-img">
+            </a>
+            <span class="company-name">
+                <span class="company-title">StarBound</span>
+                <span class="company-subtitle" data-en="An Aerospace Research Student Team"
+                    data-el="Μια Φοιτητική Ομάδα Αεροδιαστημικής Έρευνας">An Aerospace Research Student Team</span>
+            </span>
+        </li>
+        <!-- Navigation Links -->
+        <div class="nav-items">
+            <li><a href="https://docs.google.com/forms/d/e/1FAIpQLSdGUHR5nvLINE5B_iUFckAYPgUM81P3yGozB6FuNV6q6mYjOQ/viewform"
+                    class="join-button" data-en="Join Us" data-el="Γίνε Μέλος" target="_blank">Join Us</a></li>
+        </div>
+
+    </ul>
+
+    <div id="controls">
+        <button id="connectButton" class="disconnected">Disconnected</button>
+        <button id="disconnectButton" class="connected" hidden>Connected to SITL</button>
+        <label for="altitudeInput" class="alt-label">Takeoff Alt (m):</label>
+        <input type="number" id="altitudeInput" value="10" min="1" style="width: 50px;">
+        <button id="takeoffButton" disabled>Takeoff</button>
+    </div>
+
+    <div id="map"></div>
+
+    <div id="telemetry">
+        <strong>Telemetry:</strong>
+        <pre id="telemetryData">Waiting for connection...</pre>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script src="script.js" defer></script>
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/leaflet-contextmenu@1.4.0/dist/leaflet.contextmenu.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-contextmenu@1.4.0/dist/leaflet.contextmenu.min.js"></script>
+</body>
+
+</html>

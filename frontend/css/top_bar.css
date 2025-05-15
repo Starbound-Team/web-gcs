@@ -1,0 +1,292 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&display=swap');
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+html, body {
+    height: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding-top: 50px !important;
+    box-sizing: border-box;
+}
+
+.space-background, .hero-section, .contact-container, .news-container, .supporters-container, .members-container {
+    min-height: 100vh;
+}
+
+/* Styling for the entire navigation bar */
+.nav-links {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    background: transparent;
+    border-radius: 0 0;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 900 !important;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {  
+    font-family: 'Poppins', sans-serif;
+    background: #0a0a23; /* Or your preferred background */
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    padding-top: 90px;
+}
+
+.space-background, .hero-section, .contact-container, .news-container, .supporters-container, .members-container {
+    min-height: 100vh;
+}
+
+.telemetry-value {
+    min-width: 80px;           /* Increase if needed for your largest value */
+    font-family: "Fira Mono", "Consolas", "Menlo", monospace;
+    text-align: right;         /* Align digits to the right */
+    display: inline-block;
+    padding-right: 8px;        /* Optional: add some space at the end */
+}
+
+/* Styling for the entire navigation bar */
+.nav-links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: transparent;
+    border-radius: 0 0;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1000;
+    padding: 10px 20px; /* Increased from 8px to 10px */
+    height: 90px; /* Increased from 80px to 90px */
+    overflow: hidden; /* Prevent content from overflowing */
+    margin-bottom: 20px; /* Added bottom margin */
+}
+
+.bg-svg  {
+    position: absolute; /* Position video behind content */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensure video covers the full space */
+    z-index: -1; /* Keep video in the background */
+}
+
+/* Logo and company name positioning */
+.nav-links .logo {
+    display: flex;
+    align-items: center;
+    margin-right: 30px;
+    margin-left: 0;
+}
+
+.nav-links .logo-img {
+    width: 85px; /* Increased from 75px to 85px */
+    height: 85px; /* Increased from 75px to 85px */
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+/* Logo links styling - remove underline and other default link styling */
+.nav-links .logo a {
+    text-decoration: none;
+    border: none;
+    outline: none;
+    display: flex;
+    align-items: center;
+}
+
+.nav-links .logo a:hover {
+    text-decoration: none;
+    border: none;
+    outline: none;
+}
+
+/* Specifically prevent the hover line effect on the logo link */
+.nav-links .logo a:before,
+.nav-links .logo a:hover:before {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    content: none !important;
+}
+
+.nav-links .logo a, .partner-logos a {
+    text-decoration: none;
+    border: none;
+    outline: none;
+    display: flex;
+    align-items: center;
+}
+
+.nav-links .logo a:hover, .partner-logos a:hover {
+    text-decoration: none;
+    border: none;
+    outline: none;
+}
+
+/* Company name styling - updated for more stylish appearance with centered title */
+.nav-links .company-name {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center align items horizontally */
+    width: 240px; /* Control width */
+    margin-right: 20px;
+}
+
+.company-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; /* Increased from 26px to 28px */
+    font-weight: 700;
+    color: #35207e; /* Deep purple color similar to the image */
+    line-height: 1;
+    margin: 0;
+    letter-spacing: 0.5px;
+    text-align: center; /* Center the text */
+    width: 100%; /* Ensure full width for proper centering */
+}
+
+.company-subtitle {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px; /* Increased from 11px to 12px */
+    font-weight: 400;
+    color: #35207e; /* Match the title color */
+    margin-top: 4px; /* Increased from 3px to 4px */
+    line-height: 1;
+    text-align: center; /* Center the text */
+    width: 100%; /* Ensure full width for proper centering */
+}
+
+/* Navigation link styling - move them more to the right */
+.nav-links .nav-items {
+    display: flex;
+    margin-left: 10px;
+}
+
+
+.nav-links li {
+    list-style: none;
+    margin: 0 12px;
+    white-space: nowrap;
+}
+
+.nav-links li a {
+    position: relative;
+    color: black;
+    font-size: 20px; /* Increased from 19px to 20px */
+    font-weight: 500;
+    padding: 6px 0; /* Increased from 5px to 6px */
+    text-decoration: none;
+    transition: color 0.4s ease;
+}
+
+.nav-links li a:before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 0;
+    background: #1a3a7a; /* Changed from #34efdf to a darker blue */
+    border-radius: 12px;
+    transition: all 0.4s ease;
+}
+
+.nav-links li a:hover:before {
+    width: 100%;
+}
+
+
+.nav-links li.center a:before {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+
+.nav-links li.upward a:before {
+    width: 100%;
+    bottom: -5px;
+    opacity: 0;
+}
+
+
+.nav-links li.upward a:hover:before {
+    bottom: 0;
+    opacity: 1;
+}
+
+.nav-links li.forward a:before {
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.4s ease;
+}
+
+.nav-links li.forward a:hover:before {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+.nav-links li a.active {
+    color: deepskyblue !important;  /* Force the green color */
+}
+
+
+.alt-label {
+    color: #4776E6; /* Or any color you want */
+    font-weight: bold;
+}
+
+/* Join Us button with stronger darker blue effect */
+.nav-links .join-button,
+.nav-links a.join-button,
+.nav-items li a.join-button {
+    color: white !important;
+    font-size: 17px;
+    font-weight: 600;
+    padding: 8px 16px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    background: #0d2b6b !important; /* Solid dark blue with !important */
+    background-image: none !important; /* Remove any background images */
+    background-color: #0d2b6b !important; /* Ensure background color is applied */
+    border-radius: 30px;
+    box-shadow: 0 4px 15px rgba(26, 58, 122, 0.4);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+    display: inline-block;
+    margin-top: 0px;
+    line-height: 1.2;
+    border: none;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.nav-links .join-button:hover,
+.nav-links a.join-button:hover,
+.nav-items li a.join-button:hover {
+    background: #1a3a7a !important; /* Slightly lighter dark blue on hover with !important */
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(26, 58, 122, 0.6);
+}
+
+/* Override the hover line animation for Join Us button */
+.nav-links .join-button:before,
+.nav-links .join-button:hover:before {
+    display: none;
+}
