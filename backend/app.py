@@ -41,6 +41,7 @@ def generate_circle_waypoints(center_lat, center_lon, altitude, radius=50, num_p
             center_lon + dlon_deg,
             altitude
         ))
+    waypoints.append(waypoints[0])
     return waypoints
 
 def get_distance_meters(aLocation1, aLocation2):
