@@ -435,7 +435,11 @@ def mission_add_waypoint():
 
 
 
-        cmd = vehicle.commands.add(Command( 0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, 0, 0, target_lat, target_lon, target_height))
+        # cmd = vehicle.commands.add(Command( 0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, 0, 0, target_lat, target_lon, target_height))
+        cmd = Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+                      mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0,
+                      0, 0, 0, 0, # param1..4 (hold time, acceptance radius, pass through, yaw)
+                      target_lat, target_lon, target_altitude) # x, y, z        
         mission_waypoints.append(cmd)
         logging.info(f"Waypoint added to list. Current mission waypoints: {len(mission_waypoints)}")
 
