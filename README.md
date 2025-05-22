@@ -43,7 +43,7 @@ Follow these steps to set up and run the Web-GCS project locally.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/MANRAF04/web-gcs.git
+git clone https://github.com/Starbound-Team/web-gcs.git
 cd web-gcs
 ```
 
