@@ -7,6 +7,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS # Import CORS
 # Make sure all necessary DroneKit classes are imported
 from dronekit import connect, VehicleMode, APIException, LocationGlobalRelative, Command
+from pymavlink import mavutil
 import logging
 import math
 
@@ -130,6 +131,9 @@ def create_circle_mission(center_lat, center_lon, altitude, radius=50):
             time.sleep(1) # Check distance every second
 
     logging.info("All circle mission waypoints commanded.")
+
+#Mission-functions
+# def mission_add_wp(lat, lon, height):
 
 
 # --- API Endpoints ---
@@ -342,7 +346,39 @@ def example_mission():
     except Exception as e:
         logging.error(f"Mission execution failed: {str(e)}")
         return jsonify({"status": "error", "message": f"Mission execution failed: {str(e)}"}), 500
-    
+
+@app.route('/api/mission_add_waypoint', methods=['POST'])
+def mission_add_waypoint():
+    global vehicle
+    if not vehicle:
+        return jsonify({"status": "error", "message": "Vehicle not connected"}), 500
+
+    try:
+        data = request.get_json()
+        if not data\
+                or 'lat' not in data\
+                or 'lon' not in data:
+            return jsonify({"status": "error",
+                            "message": "Missing required parameters"}), 400
+
+        logging.info("Adding waypoint...")
+
+        #Get lat, lon, height from data
+        target_lat = float(data['lat'])
+        target_lon = float(data['lon'])
+        if 'height' not in data:
+            target_height = vehicle.location.global_relative_frame.alt
+        else:
+            target_height = float(data['height'])
+
+
+
+        vehicle.commands.add(Command( 0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, 0, 0, target_lat, target_lon, target_height))
+
+    except Exception as e:
+        logging.error(f"Failed to add waypoint: {str(e)}")
+        return jsonify({"status": "error", "message": f"Mission execution failed: {str(e)}"}), 500
+
 @app.route('/api/rtl', methods=['POST'])
 def rtl():
     """Return to Launch (RTL) command."""
