@@ -2,6 +2,7 @@ const connectButton = document.getElementById('connectButton');
 const disconnectButton = document.getElementById('disconnectButton');
 const statusButton = document.getElementById('statusButton');
 const takeoffButton = document.getElementById('takeoffButton');
+const startMissionButton = document.getElementById('startMissionButton');
 // const statusDiv = document.getElementById('status');
 const telemetryDataPre = document.getElementById('telemetryData');
 
@@ -277,6 +278,37 @@ function sendExampleMission() {
     );
 }
 
+
+function sendStartMissionCommand() {
+    showToast("Uploading and starting mission...", "info");
+    fetch(`${backendUrl}/api/start_mission`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}) // No specific data needed for this command
+    })
+    .then(response => {
+        return response.json().then(data => {
+            if (!response.ok) {
+                throw new Error(data.message || `Server responded with status: ${response.status}`);
+            }
+            return data;
+        });
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            showToast("Mission started successfully!", "success");
+        } else {
+            showToast(`Failed to start mission: ${data.message}`, "error");
+        }
+    })
+    .catch(error => {
+        console.error("Start mission fetch error:", error);
+        showToast(`Error starting mission: ${error.message}`, "error");
+    });
+}
+
 // --- UI Update Functions ---
 // function //updateStatus(message, isError = false) {
 //     statusDiv.innerHTML = `<strong>Status:</strong> ${message}`;
@@ -358,6 +390,7 @@ function setUIConnected(connected) {
     // disconnectButton.disabled = !connected;
     statusButton.disabled = !connected;
     takeoffButton.disabled = !connected;
+    startMissionButton.disabled = !connected;
     // Enable/disable other command buttons here later
 
     if (connected) {
@@ -489,6 +522,7 @@ connectButton.addEventListener('click', connectToDrone);
 disconnectButton.addEventListener('click', disconnectFromDrone);
 statusButton.addEventListener('click', fetchStatus); // Manual status fetch
 takeoffButton.addEventListener('click', sendTakeOff); // Manual status fetch
+startMissionButton.addEventListener('click', sendStartMissionCommand);
 
 // --- Initialization ---
 // Ensure map is initialized after the DOM is ready
