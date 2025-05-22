@@ -24,6 +24,8 @@ is_mission_active_uploaded = 0
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes, allowing requests from your frontend
 
+mission_waypoints = [] # NEW: List to store mission commands
+
 # --- Custom Functions ---
 def generate_circle_waypoints(center_lat, center_lon, altitude, radius=50, num_points=12):
     """Generates a list of LocationGlobalRelative waypoints for a circle."""
@@ -349,9 +351,62 @@ def example_mission():
         logging.error(f"Mission execution failed: {str(e)}")
         return jsonify({"status": "error", "message": f"Mission execution failed: {str(e)}"}), 500
 
+@app.route('/api/start_mission', methods=['POST'])
+def start_mission():
+    global vehicle, mission_waypoints
+    if not vehicle:
+        return jsonify({"status": "error", "message": "Vehicle not connected"}), 500
+    if not mission_waypoints:
+        return jsonify({"status": "error", "message": "No waypoints in mission plan"}), 400
+
+    try:
+        logging.info("Clearing existing mission on vehicle...")
+        vehicle.commands.clear()
+        vehicle.commands.upload() # Blocks until commands are uploaded
+        time.sleep(1) # Give it a moment
+
+        logging.info(f"Uploading {len(mission_waypoints)} new waypoints to vehicle...")
+        for command in mission_waypoints:
+            vehicle.commands.add(command)
+        
+        # Add a MAV_CMD_NAV_RETURN_TO_LAUNCH at the end (optional but good practice)
+        vehicle.commands.add(Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+                                     mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH, 0, 0,
+                                     0, 0, 0, 0, 0, 0, 0))
+
+        vehicle.commands.upload()
+        logging.info("Waypoints uploaded successfully!")
+
+        # Set mode to AUTO and arm the vehicle if not already armed
+        if vehicle.mode.name != "AUTO":
+            logging.info("Setting vehicle mode to AUTO...")
+            vehicle.mode = VehicleMode("AUTO")
+            while vehicle.mode.name != "AUTO":
+                logging.info(" Waiting for AUTO mode change...")
+                time.sleep(1)
+            logging.info("Vehicle is in AUTO mode.")
+
+        if not vehicle.armed:
+            logging.info("Arming vehicle for mission...")
+            vehicle.armed = True
+            while not vehicle.armed:
+                logging.info(" Waiting for arming...")
+                time.sleep(1)
+            logging.info("Vehicle is armed.")
+
+        logging.info("Mission started!")
+        # Clear the mission_waypoints list after successful upload
+        mission_waypoints = [] 
+
+        return jsonify({"status": "success", "message": "Mission uploaded and started"})
+
+    except Exception as e:
+        logging.error(f"Failed to start mission: {str(e)}", exc_info=True)
+        return jsonify({"status": "error", "message": f"Failed to start mission: {str(e)}"}), 500
+
 @app.route('/api/mission_add_waypoint', methods=['POST'])
 def mission_add_waypoint():
-    global is_mission_active_uploaded, vehicle
+    global is_mission_active_uploaded, vehicle, mission_waypoints
 
     if is_mission_active_uploaded:
         is_mission_active_uploaded = 0
@@ -368,7 +423,7 @@ def mission_add_waypoint():
             return jsonify({"status": "error",
                             "message": "Missing required parameters"}), 400
 
-        logging.info("Adding waypoint...")
+        logging.info(f"Adding waypoint: Lat={target_lat}, Lon={target_lon}, Alt={target_alt}m")
 
         #Get lat, lon, height from data
         target_lat = float(data['lat'])
@@ -380,7 +435,9 @@ def mission_add_waypoint():
 
 
 
-        vehicle.commands.add(Command( 0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, 0, 0, target_lat, target_lon, target_height))
+        cmd = vehicle.commands.add(Command( 0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, 0, 0, target_lat, target_lon, target_height))
+        mission_waypoints.append(cmd)
+        logging.info(f"Waypoint added to list. Current mission waypoints: {len(mission_waypoints)}")
 
     except Exception as e:
         logging.error(f"Failed to add waypoint: {str(e)}")
