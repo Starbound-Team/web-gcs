@@ -50,12 +50,36 @@ body {
     min-height: 100vh;
 }
 
-.telemetry-value {
-    min-width: 80px;           /* Increase if needed for your largest value */
-    font-family: "Fira Mono", "Consolas", "Menlo", monospace;
-    text-align: right;         /* Align digits to the right */
+.telemetry-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 32px;
+    background: rgba(22,37,80,0.7);
+    border-radius: 8px;
+    color: #fff;
+    padding: 12px 16px;
+    font-size: 1.05em;
+}
+.telemetry-grid div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+}
+.telemetry-grid span {
     display: inline-block;
-    padding-right: 8px;        /* Optional: add some space at the end */
+}
+.telemetry-value {
+    font-family: "Fira Mono", "Consolas", "Menlo", monospace;
+    text-align: left;
+    min-width: 40px;
+    margin-left: 6px;
+}
+.telemetry-label {
+    color: #40c9ff; /* Bright blue for labels */
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 /* Styling for the entire navigation bar */
@@ -289,4 +313,15 @@ body {
 .nav-links .join-button:before,
 .nav-links .join-button:hover:before {
     display: none;
+}
+
+/* Compass SVG for telemetry grid */
+#compass-svg {
+    width: 120px;
+    height: 120px;
+    max-width: 100%;
+    margin-right: 8px;
+}
+#compass-needle {
+    transition: transform 0.3s cubic-bezier(0.4, 2, 0.6, 1);
 }

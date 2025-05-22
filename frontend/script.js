@@ -262,16 +262,49 @@ function updateTelemetry(data) {
     // Update Text Telemetry
     if (data && data.is_connected) {
         telemetryDataPre.innerHTML = `
-    <table style="width:100%; color:#fff; background:rgba(22,37,80,0.7); border-radius:8px; border-collapse:separate; border-spacing:0 8px;">
-        <tr><td><strong>Mode</strong></td><td class="telemetry-value">${data.mode}</td></tr>
-        <tr><td><strong>Armed</strong></td><td class="telemetry-value">${data.armed}</td></tr>
-        <tr><td><strong>Altitude</strong></td><td class="telemetry-value">${data.alt?.toFixed(5)} m</td></tr>
-        <tr><td><strong>Airspeed</strong></td><td class="telemetry-value">${data.airspeed?.toFixed(5)}</td></tr>
-        <tr><td><strong>Groundspeed</strong></td><td class="telemetry-value">${data.groundspeed?.toFixed(5)}</td></tr>
-        <tr><td><strong>Heading</strong></td><td class="telemetry-value">${data.heading}</td></tr>
-        <tr><td><strong>Battery</strong></td><td class="telemetry-value">${data.battery_voltage ? `${parseFloat(data.battery_voltage).toFixed(2)}V` : 'N/A'}</td></tr>
-    </table>
-`;
+        <div class="telemetry-grid">
+            <div><span class="telemetry-label">Mode:</span> <span class="telemetry-value">${data.mode}</span></div>
+            <div><span class="telemetry-label">Armed:</span> <span class="telemetry-value">${data.armed}</span></div>
+            <div><span class="telemetry-label">Altitude:</span> <span class="telemetry-value">${data.alt?.toFixed(2)} m</span></div>
+            <div><span class="telemetry-label">Airspeed:</span> <span class="telemetry-value">${data.airspeed?.toFixed(2)}</span></div>
+            <div><span class="telemetry-label">Groundspeed:</span> <span class="telemetry-value">${data.groundspeed?.toFixed(2)}</span></div>
+            <div><span class="telemetry-label">Heading:</span> 
+                <span class="telemetry-value" style="display:flex;align-items:center;gap:5px;">
+                    <svg id="compass-svg" width="180" height="180" viewBox="0 0 180 180" style="vertical-align:middle;">
+                        <circle cx="90" cy="90" r="85" stroke="#b0c4de" stroke-width="4" fill="#f8fcff" />
+                        <!-- Yellow arrow (needle) -->
+                        <g id="compass-arrow-group">
+                            <polygon id="compass-arrow" points="90,30 70,160 90,140 110,160" fill="#FFD600" stroke="#bfa600" stroke-width="2" />
+                        </g>
+                        <!-- Degree numbers -->
+                        <g id="compass-degrees">
+                            <text x="90" y="30" text-anchor="middle" font-size="20" fill="#333">0</text>
+                            <text x="140" y="50" text-anchor="middle" font-size="20" fill="#333">4</text>
+                            <text x="165" y="90" text-anchor="middle" font-size="20" fill="#333">9</text>
+                            <text x="150" y="130" text-anchor="middle" font-size="20" fill="#333">13</text>
+                            <text x="90" y="170" text-anchor="middle" font-size="20" fill="#333">18</text>
+                            <text x="40" y="130" text-anchor="middle" font-size="20" fill="#333">22</text>
+                            <text x="20" y="90" text-anchor="middle" font-size="20" fill="#333">27</text>
+                            <text x="40" y="50" text-anchor="middle" font-size="20" fill="#333">32</text>
+                        </g>
+                        <!-- Center circle -->
+                        <!--<circle cx="90" cy="90" r="8" fill="#fff" stroke="#888" stroke-width="2" />-->
+                        <!-- Numeric heading in center -->
+                        <text id="compass-heading-text" x="90" y="100" text-anchor="middle" font-size="30" fill="#222">${data.heading}&deg;</text>
+                    </svg>
+                </span>
+            </div>
+            <div><span class="telemetry-label">Battery:</span> <span class="telemetry-value">${data.battery_voltage ? `${parseFloat(data.battery_voltage).toFixed(2)}V` : 'N/A'}</span></div>
+        </div>
+        `;
+        // Rotate compass arrow
+        const compassArrow = document.getElementById('compass-arrow-group');
+        if (compassArrow && typeof data.heading === 'number') {
+            compassArrow.setAttribute('transform', `rotate(${data.heading} 90 90)`);
+        }
+        // Update numeric value (in case you want to animate or format)
+        const headingValue = document.getElementById('compass-heading-text');
+        if (headingValue) headingValue.textContent = `${data.heading}\u00B0`;
     } else {
         telemetryDataPre.textContent = 'Disconnected or no data available.';
     }
