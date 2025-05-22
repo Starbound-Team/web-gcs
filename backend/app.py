@@ -18,6 +18,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 vehicle = None
 connection_string = 'udp:127.0.0.1:14550' # Default SITL address
 
+is_mission_active_uploaded = 0
+
 # --- Flask App Setup ---
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes, allowing requests from your frontend
@@ -404,7 +406,12 @@ def start_mission():
 
 @app.route('/api/mission_add_waypoint', methods=['POST'])
 def mission_add_waypoint():
-    global vehicle, mission_waypoints
+    global is_mission_active_uploaded, vehicle, mission_waypoints
+
+    if is_mission_active_uploaded:
+        is_mission_active_uploaded = 0
+        vehicle.commands.clear()
+
     if not vehicle:
         return jsonify({"status": "error", "message": "Vehicle not connected"}), 500
 
@@ -431,6 +438,33 @@ def mission_add_waypoint():
         cmd = vehicle.commands.add(Command( 0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, 0, 0, target_lat, target_lon, target_height))
         mission_waypoints.append(cmd)
         logging.info(f"Waypoint added to list. Current mission waypoints: {len(mission_waypoints)}")
+
+    except Exception as e:
+        logging.error(f"Failed to add waypoint: {str(e)}")
+        return jsonify({"status": "error", "message": f"Mission execution failed: {str(e)}"}), 500
+
+@app.route('/api/start_mission', methods=['POST'])
+def start_mission():
+    global is_mission_active_uploaded, vehicle
+
+    if not vehicle:
+        return jsonify({"status": "error", "message": "Vehicle not connected"}), 500
+
+    try:
+        logging.info("Starting mission...")
+
+        #Uploading commands
+        vehicle.commands.upload()
+
+        # Reset mission set to first (0) waypoint
+        vehicle.commands.next = 0
+
+        # Set mode to AUTO to start mission
+        vehicle.mode = VehicleMode("AUTO")
+
+        #This will allow the mission to reset if we need to upload new ones
+        #Note: can propably clear mission here and avoid global var
+        is_mission_active_uploaded = 1
 
     except Exception as e:
         logging.error(f"Failed to add waypoint: {str(e)}")
