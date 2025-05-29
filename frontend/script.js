@@ -60,6 +60,13 @@ function initMap() {
             callback: function(e) {
               map.panTo(e.latlng);
             }
+          },
+          {
+            text: 'Clear the map',
+            callback: function(e) {
+                clearMap();
+                showToast("Map cleared", "info");
+            }
           }
         ]
       }).setView([39.36, 22.94], 5); // Start relatively zoomed out
@@ -71,6 +78,24 @@ function initMap() {
     }).addTo(map);
 
     console.log("Map initialized");
+}
+
+function clearMap() {
+    if (map) {
+        // Clear all markers and polylines
+        map.eachLayer(function (layer) {
+            if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+            map.removeLayer(layer);
+            }
+        });
+        flightPathCoordinates = []; // Reset flight path history
+        flightPathPolyline = null; // Reset polyline
+        droneMarker = null; // Reset drone marker
+        // initialCenterSet = false; // Reset centering flag
+        console.log("Map cleared.");
+    } else {
+        console.warn("Map is not initialized.");
+    }
 }
 
 // Toast notification helper
@@ -294,7 +319,20 @@ function updateTelemetry(data) {
                     </svg>
                 </span>
             </div>
-            <div><span class="telemetry-label">Battery:</span> <span class="telemetry-value">${data.battery_voltage ? `${parseFloat(data.battery_voltage).toFixed(2)}V` : 'N/A'}</span></div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="telemetry-label">Battery:</span>
+                <div class="battery-bar-outer">
+                    <div class="battery-bar-inner"
+                        style="
+                            width: ${data.battery_level ? parseFloat(data.battery_level) : 0}%;
+                            background: ${getBatteryColor(data.battery_level)};
+                        ">
+                    </div>
+                    <div class="battery-bar-center-text">
+                        ${data.battery_level ? `${parseFloat(data.battery_level).toFixed(0)}%` : 'N/A'}
+                    </div>
+                </div>
+            </div>
         </div>
         `;
         // Rotate compass arrow
@@ -358,7 +396,13 @@ function updateTelemetry(data) {
         } // End if valid lat/lon
     } // End if map and connected
 }
-
+function getBatteryColor(level) {
+    const percent = parseFloat(level);
+    if (isNaN(percent)) return '#888';
+    if (percent > 60) return '#28a745';      // Green
+    if (percent > 30) return '#ffc107';      // Yellow
+    return '#dc3545';                        // Red
+}
 
 function setUIConnected(connected) {
     isConnected = connected;

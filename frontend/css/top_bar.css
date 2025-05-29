@@ -82,6 +82,35 @@ body {
     letter-spacing: 0.5px;
 }
 
+
+.battery-bar-outer {
+    position: relative;
+    width: 120px;
+    height: 24px;
+    background: #eee;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #ccc;
+}
+.battery-bar-inner {
+    height: 100%;
+    border-radius: 6px 0 0 6px;
+    transition: width 0.4s;
+}
+.battery-bar-center-text {
+    position: absolute;
+    left: 25%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #222;
+    font-weight: bold;
+    font-size: 15px;
+    pointer-events: none;
+    user-select: none;
+    width: 100%;
+    text-align: center;
+}
+
 /* Styling for the entire navigation bar */
 .nav-links {
     display: flex;
