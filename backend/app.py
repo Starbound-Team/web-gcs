@@ -7,6 +7,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS # Import CORS
 # Make sure all necessary DroneKit classes are imported
 from dronekit import connect, VehicleMode, APIException, LocationGlobalRelative, Command
+from pymavlink import mavutil
 import logging
 import math
 
@@ -17,9 +18,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 vehicle = None
 connection_string = 'udp:127.0.0.1:14550' # Default SITL address
 
+is_mission_active_uploaded = 0
+
 # --- Flask App Setup ---
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes, allowing requests from your frontend
+
+mission_waypoints = [] # NEW: List to store mission commands
 
 # --- Custom Functions ---
 def generate_circle_waypoints(center_lat, center_lon, altitude, radius=50, num_points=12):
@@ -130,6 +135,9 @@ def create_circle_mission(center_lat, center_lon, altitude, radius=50):
             time.sleep(1) # Check distance every second
 
     logging.info("All circle mission waypoints commanded.")
+
+#Mission-functions
+# def mission_add_wp(lat, lon, height):
 
 
 # --- API Endpoints ---
@@ -342,7 +350,126 @@ def example_mission():
     except Exception as e:
         logging.error(f"Mission execution failed: {str(e)}")
         return jsonify({"status": "error", "message": f"Mission execution failed: {str(e)}"}), 500
-    
+
+@app.route('/api/start_mission', methods=['POST'])
+def start_mission():
+    global vehicle, mission_waypoints
+    if not vehicle:
+        return jsonify({"status": "error", "message": "Vehicle not connected"}), 500
+    if not mission_waypoints:
+        return jsonify({"status": "error", "message": "No waypoints in mission plan"}), 400
+
+    try:
+        logging.info("Clearing existing mission on vehicle...")
+        vehicle.commands.clear()
+        vehicle.commands.upload() # Blocks until commands are uploaded
+        time.sleep(1) # Give it a moment
+
+        logging.info(f"Uploading {len(mission_waypoints)} new waypoints to vehicle...")
+        for command in mission_waypoints:
+            vehicle.commands.add(command)
+        
+        # Add a MAV_CMD_NAV_RETURN_TO_LAUNCH at the end (optional but good practice)
+        vehicle.commands.add(Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+                                     mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH, 0, 0,
+                                     0, 0, 0, 0, 0, 0, 0))
+
+        vehicle.commands.upload()
+        logging.info("Waypoints uploaded successfully!")
+
+        # Set mode to AUTO and arm the vehicle if not already armed
+        if vehicle.mode.name != "AUTO":
+            logging.info("Setting vehicle mode to AUTO...")
+            vehicle.mode = VehicleMode("AUTO")
+            while vehicle.mode.name != "AUTO":
+                logging.info(" Waiting for AUTO mode change...")
+                time.sleep(1)
+            logging.info("Vehicle is in AUTO mode.")
+
+        if not vehicle.armed:
+            logging.info("Arming vehicle for mission...")
+            vehicle.armed = True
+            while not vehicle.armed:
+                logging.info(" Waiting for arming...")
+                time.sleep(1)
+            logging.info("Vehicle is armed.")
+
+        logging.info("Mission started!")
+        # Clear the mission_waypoints list after successful upload
+        mission_waypoints = [] 
+
+        return jsonify({"status": "success", "message": "Mission uploaded and started"})
+
+    except Exception as e:
+        logging.error(f"Failed to start mission: {str(e)}", exc_info=True)
+        return jsonify({"status": "error", "message": f"Failed to start mission: {str(e)}"}), 500
+
+@app.route('/api/mission_add_waypoint', methods=['POST'])
+def mission_add_waypoint():
+    global is_mission_active_uploaded, vehicle, mission_waypoints
+
+    if is_mission_active_uploaded:
+        is_mission_active_uploaded = 0
+        vehicle.commands.clear()
+
+    if not vehicle:
+        return jsonify({"status": "error", "message": "Vehicle not connected"}), 500
+
+    try:
+        data = request.get_json()
+        if not data\
+                or 'lat' not in data\
+                or 'lon' not in data:
+            return jsonify({"status": "error",
+                            "message": "Missing required parameters"}), 400
+
+        logging.info(f"Adding waypoint: Lat={target_lat}, Lon={target_lon}, Alt={target_alt}m")
+
+        #Get lat, lon, height from data
+        target_lat = float(data['lat'])
+        target_lon = float(data['lon'])
+        if 'height' not in data:
+            target_height = vehicle.location.global_relative_frame.alt
+        else:
+            target_height = float(data['height'])
+
+
+
+        cmd = vehicle.commands.add(Command( 0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0, 0, 0, 0, target_lat, target_lon, target_height))
+        mission_waypoints.append(cmd)
+        logging.info(f"Waypoint added to list. Current mission waypoints: {len(mission_waypoints)}")
+
+    except Exception as e:
+        logging.error(f"Failed to add waypoint: {str(e)}")
+        return jsonify({"status": "error", "message": f"Mission execution failed: {str(e)}"}), 500
+
+@app.route('/api/start_mission', methods=['POST'])
+def start_mission():
+    global is_mission_active_uploaded, vehicle
+
+    if not vehicle:
+        return jsonify({"status": "error", "message": "Vehicle not connected"}), 500
+
+    try:
+        logging.info("Starting mission...")
+
+        #Uploading commands
+        vehicle.commands.upload()
+
+        # Reset mission set to first (0) waypoint
+        vehicle.commands.next = 0
+
+        # Set mode to AUTO to start mission
+        vehicle.mode = VehicleMode("AUTO")
+
+        #This will allow the mission to reset if we need to upload new ones
+        #Note: can propably clear mission here and avoid global var
+        is_mission_active_uploaded = 1
+
+    except Exception as e:
+        logging.error(f"Failed to add waypoint: {str(e)}")
+        return jsonify({"status": "error", "message": f"Mission execution failed: {str(e)}"}), 500
+
 @app.route('/api/rtl', methods=['POST'])
 def rtl():
     """Return to Launch (RTL) command."""
