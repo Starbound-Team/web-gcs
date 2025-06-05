@@ -344,6 +344,90 @@ body {
     display: none;
 }
 
+.content-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start; /* Align to top for perfect alignment */
+    margin: 1em auto;
+    max-width: 95%;
+    flex-wrap: wrap;
+}
+
+/* Updated map styling */
+#map {
+    flex: 1;
+    min-width: 400px;
+    height: 450px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    margin: 0 !important; /* Remove all margins */
+    padding: 0 !important; /* Remove any padding */
+}
+
+/* Video container - perfectly aligned with map */
+.video-container {
+    flex: 1;
+    min-width: 400px;
+    height: 450px; /* Same height as map */
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #000;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0; /* Ensure no margins */
+    padding: 0; /* Ensure no padding */
+}
+
+#videoFeed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 9px; /* Slightly smaller to account for container border */
+}
+
+/* Video overlay for status messages */
+.video-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-align: center;
+    font-size: 1.2em;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 10;
+}
+
+.video-overlay i {
+    font-size: 2em;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Hide video when not active */
+.video-container.inactive #videoFeed {
+    display: none;
+}
+
+/* Mobile responsive */
+@media screen and (max-width: 1024px) {
+    .content-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    #map, .video-container {
+        width: 90%;
+        min-width: unset;
+    }
+}
+
 /* Compass SVG for telemetry grid */
 #compass-svg {
     width: 120px;
