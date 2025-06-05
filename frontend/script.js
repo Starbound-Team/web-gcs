@@ -6,6 +6,10 @@ const telemetryDataPre = document.getElementById('telemetryData');
 const altitudeInput = document.getElementById('altitudeInput');
 
 const backendUrl = 'http://127.0.0.1:5000'; // Your Flask backend URL
+const videoFeed = document.getElementById('videoFeed');
+const videoContainer = document.getElementById('videoContainer');
+const videoOverlay = document.getElementById('videoOverlay');
+let isVideoActive = false;
 
 // --- Map Variables ---
 let map = null;
@@ -79,6 +83,85 @@ function initMap() {
 
     console.log("Map initialized");
 }
+
+// Video control functions
+function resetVideoForReconnection() {
+    // Stop video if it's currently active
+    if (isVideoActive) {
+        videoFeed.pause();
+        videoFeed.currentTime = 0;
+        videoFeed.removeAttribute('src');
+        videoFeed.load(); // Force reload to clear any cached state
+        isVideoActive = false;
+    }
+    
+    // Reset container state
+    videoContainer.classList.add('inactive');
+    
+    // Show appropriate overlay message
+    videoOverlay.innerHTML = `
+        <i class="fas fa-plane"></i>
+        <div>Waiting for takeoff...</div>
+    `;
+    videoOverlay.style.display = 'block';
+    
+    console.log("Video reset for reconnection");
+}
+
+function startVideo() {
+    if (!isVideoActive) {
+        console.log("Starting video...");
+        
+        // Clear any previous source and reset state
+        videoFeed.pause();
+        videoFeed.removeAttribute('src');
+        videoFeed.load();
+        
+        // Small delay to ensure video element is reset
+        setTimeout(() => {
+            videoFeed.src = 'test.mp4';
+            videoFeed.currentTime = 0;
+            
+            videoFeed.play().then(() => {
+                videoContainer.classList.remove('inactive');
+                videoOverlay.style.display = 'none';
+                isVideoActive = true;
+                console.log("Video started successfully");
+            }).catch(error => {
+                console.error('Error starting video:', error);
+                showToast("Error starting video feed", "error");
+                
+                // Reset on error
+                videoFeed.removeAttribute('src');
+                videoFeed.load();
+                videoContainer.classList.add('inactive');
+                videoOverlay.innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>Video error - check file</div>
+                `;
+                videoOverlay.style.display = 'block';
+                isVideoActive = false;
+            });
+        }, 100);
+    }
+}
+
+function stopVideo() {
+    if (isVideoActive) {
+        videoFeed.pause();
+        videoFeed.currentTime = 0;
+        videoFeed.removeAttribute('src');
+        videoContainer.classList.add('inactive');
+        videoOverlay.innerHTML = `
+            <i class="fas fa-video-slash"></i>
+            <div>No Video</div>
+        `;
+        videoOverlay.style.display = 'block';
+        isVideoActive = false;
+        showToast("Video feed stopped", "info");
+    }
+}
+
 
 function clearMap() {
     if (map) {
@@ -201,6 +284,7 @@ function sendTakeOff() {
     .then(data => {
         if (data.status === 'success') {
             showToast(data.message, "success");
+            // startVideo();
         } else {
             showToast(`Command failed: ${data.message}`, "error");
         }
@@ -335,6 +419,7 @@ function updateTelemetry(data) {
             </div>
         </div>
         `;
+        
         // Rotate compass arrow
         const compassArrow = document.getElementById('compass-arrow-group');
         if (compassArrow && typeof data.heading === 'number') {
@@ -343,6 +428,8 @@ function updateTelemetry(data) {
         // Update numeric value (in case you want to animate or format)
         const headingValue = document.getElementById('compass-heading-text');
         if (headingValue) headingValue.textContent = `${data.heading}\u00B0`;
+
+        
     } else {
         telemetryDataPre.textContent = 'Disconnected or no data available.';
     }
@@ -428,6 +515,9 @@ function setUIConnected(connected) {
         if (!statusInterval) {
             statusInterval = setInterval(fetchStatus, 100); // Poll every 2 seconds
         }
+
+        resetVideoForReconnection();
+        startVideo(); // Start video feed on connect
     } else {
         connectButton.hidden = false;
         disconnectButton.hidden = true;
@@ -440,7 +530,7 @@ function setUIConnected(connected) {
             clearInterval(statusInterval);
             statusInterval = null;
         }
-
+        stopVideo();
         // Clean up map marker
         if (droneMarker) {
             map.removeLayer(droneMarker);
@@ -509,6 +599,8 @@ function disconnectFromDrone() {
         });
 }
 
+
+
 async function fetchStatus() {
     console.log("SEEEND");
 
@@ -540,7 +632,27 @@ async function fetchStatus() {
 connectButton.addEventListener('click', connectToDrone);
 disconnectButton.addEventListener('click', disconnectFromDrone);
 takeoffButton.addEventListener('click', sendTakeOff); // Manual status fetch
+videoFeed.addEventListener('ended', function() {
+    if (isConnected && isVideoActive) {
+        // Loop the video while connected
+        this.currentTime = 0;
+        this.play();
+    }
+});
 
+videoFeed.addEventListener('error', function(e) {
+    console.error('Video error event:', e);
+    if (isVideoActive) {
+        videoOverlay.innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>Video feed error</div>
+        `;
+        videoOverlay.style.display = 'block';
+        videoContainer.classList.add('inactive');
+        isVideoActive = false;
+        showToast("Video feed error", "error");
+    }
+});
 // --- Initialization ---
 // Ensure map is initialized after the DOM is ready
 document.addEventListener('DOMContentLoaded', (event) => {
